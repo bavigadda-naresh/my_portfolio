@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+BAVIGADDA NARESH - 3D INTERACTIVE PORTFOLIO (SINGLE-FILE, ZERO-BUILD)
+================================================================================
+
+HOW TO CONFIGURE FORM_ENDPOINT:
+--------------------------------
+1. Locate the JavaScript configuration block near line ~680:
+      const FORM_ENDPOINT = '';
+2. Set it to your Formspree endpoint (or any endpoint accepting JSON POST):
+      const FORM_ENDPOINT = 'https://formspree.io/f/your_form_id';
+3. If FORM_ENDPOINT is left empty (''), the contact form will automatically and
+   safely activate the one-click "Send with Gmail", "Other Email App (mailto)",
+   and "Copy Address" buttons so no messages are ever lost.
+
+HOW TO REPLACE THE PROFILE PHOTO:
+----------------------------------
+1. Locate the configuration constant:
+      const PROFILE_PHOTO_SRC = '/assets/aistudio/linkden_c25d0c82.jpeg';
+2. To replace with your own file, provide its URL or relative path:
+      const PROFILE_PHOTO_SRC = 'path/to/my-photo.jpg';
+3. To embed as a base64 data URI (for 100% self-contained single-file sharing):
+      - Convert your square photo using a base64 encoder
+      - Paste the data URI string:
+        const PROFILE_PHOTO_SRC = 'data:image/jpeg;base64,/9j/4AAQSkZJRg...';
+================================================================================
+-->
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bavigadda Naresh | Python Full Stack Developer</title>
+  <meta name="description" content="Portfolio of Bavigadda Naresh - Python Full Stack Developer with hands-on experience in Django, Machine Learning, and IoT sensor systems." />
+  <meta property="og:title" content="Bavigadda Naresh | Python Full Stack Developer" />
+  <meta property="og:description" content="Portfolio of Bavigadda Naresh - Python Full Stack Developer with hands-on experience in Django, Machine Learning, and IoT sensor systems." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Bricolage Grotesque (Headings), Hanken Grotesk (Prose), IBM Plex Mono (Labels) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;700;800&family=Hanken+Grotesk:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Three.js (pinned r128 from cdnjs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #070a11;
+      --bg-surface: rgba(13, 20, 36, 0.76);
+      --bg-surface-hover: rgba(18, 28, 51, 0.88);
+      --border-subtle: rgba(98, 212, 232, 0.16);
+      --border-strong: rgba(98, 212, 232, 0.4);
+      --cyan-accent: #62d4e8;
+      --cyan-glow: rgba(98, 212, 232, 0.45);
+      --amber-accent: #ffb347;
+      --amber-glow: rgba(255, 179, 71, 0.4);
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --font-display: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+      --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Fixed WebGL Background Canvas */
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Fallback gradient if WebGL fails */
+    .webgl-fallback {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(98, 212, 232, 0.08) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 80%, rgba(255, 179, 71, 0.07) 0%, transparent 50%),
+                  #070a11;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Custom Cursor Elements */
+    .cursor-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--amber-accent);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: width 0.2s, height 0.2s, background-color 0.2s;
+    }
+
+    .cursor-ring {
+      width: 32px;
+      height: 32px;
+      border: 1.5px solid var(--cyan-accent);
+      border-radius: 50%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.25s,
+                  opacity 0.25s;
+    }
+
+    .cursor-hover .cursor-dot {
+      width: 10px;
+      height: 10px;
+      background-color: var(--cyan-accent);
+    }
+
+    .cursor-hover .cursor-ring {
+      width: 52px;
+      height: 52px;
+      border-color: var(--amber-accent);
+      background-color: rgba(255, 179, 71, 0.08);
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      .cursor-dot, .cursor-ring {
+        display: none !important;
+      }
+    }
+
+    /* Fixed Top Navigation Bar */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 50;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(7, 10, 17, 0.82);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: border-color 0.3s;
+    }
+
+    .topbar-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.9rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .topbar-brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .topbar-brand .accent-cyan {
+      color: var(--cyan-accent);
+    }
+
+    .topbar-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+      list-style: none;
+    }
+
+    .topbar-link {
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      white-space: nowrap;
+      position: relative;
+      padding: 0.25rem 0;
+      transition: color 0.2s;
+    }
+
+    .topbar-link:hover, .topbar-link.active {
+      color: var(--text-primary);
+    }
+
+    .topbar-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--cyan-accent);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .topbar-link:hover::after, .topbar-link.active::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    /* Scroll progress bar */
+    .scroll-progress-track {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .scroll-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--cyan-accent), var(--amber-accent));
+      box-shadow: 0 0 8px var(--amber-glow);
+      transition: width 0.08s linear;
+    }
+
+    /* Mobile Hamburger Menu */
+    .mobile-menu-btn {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .mobile-menu-drawer {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      background: rgba(7, 10, 17, 0.98);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .mobile-menu-drawer.open {
+      display: flex;
+    }
+
+    /* Content Layout Container */
+    .main-container {
+      position: relative;
+      z-index: 10;
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      min-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6rem 0 4rem;
+      position: relative;
+    }
+
+    /* Hero Section */
+    #hero {
+      min-height: 100vh;
+      padding-top: 7rem;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 3.5rem;
+      align-items: center;
+    }
+
+    .hero-photo-wrapper {
+      position: relative;
+      width: 270px;
+      height: 270px;
+      margin: 0 auto;
+    }
+
+    .hero-photo-ring-outer {
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 1.5px dashed var(--cyan-accent);
+      opacity: 0.6;
+      animation: spinSlow 30s linear infinite;
+    }
+
+    .hero-photo-ring-inner {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid var(--amber-accent);
+      opacity: 0.8;
+      box-shadow: 0 0 24px var(--amber-glow);
+    }
+
+    .hero-photo-img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 20%;
+      position: relative;
+      z-index: 2;
+      border: 4px solid #070a11;
+      background: #0d1424;
+      display: block;
+    }
+
+    .hero-photo-fallback {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0d1424, #1a253f);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--cyan-accent);
+      border: 4px solid #070a11;
+      position: relative;
+      z-index: 2;
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Section Typography & Underline */
+    .section-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--cyan-accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 1px;
+      background: var(--cyan-accent);
+    }
+
+    .section-title-wrap {
+      margin-bottom: 2.25rem;
+      position: relative;
+      display: inline-block;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+      color: var(--text-primary);
+      text-wrap: balance;
+    }
+
+    .title-underline {
+      height: 3px;
+      background: linear-gradient(90deg, var(--amber-accent), transparent);
+      width: 0;
+      margin-top: 0.5rem;
+      border-radius: 2px;
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .in-view .title-underline {
+      width: 100%;
+    }
+
+    /* Glass Panels */
+    .glass-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 1.75rem;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.25s,
+                  box-shadow 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(98, 212, 232, 0.08);
+    }
+
+    /* Tilt Cards */
+    .tilt-card {
+      position: relative;
+      transform-style: preserve-3d;
+      will-change: transform;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 2rem;
+      overflow: hidden;
+      transition: border-color 0.25s;
+    }
+
+    .tilt-card:hover {
+      border-color: var(--cyan-accent);
+    }
+
+    .tilt-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: radial-gradient(circle 300px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(98, 212, 232, 0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .tilt-card:hover .tilt-glow {
+      opacity: 1;
+    }
+
+    /* Clip Path Wipe Reveal */
+    .reveal-wipe {
+      clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+      transition: clip-path 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .in-view .reveal-wipe {
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Interactive Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.35rem;
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      font-weight: 600;
+      border-radius: 8px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .btn:focus-visible {
+      outline: 2px solid var(--cyan-accent);
+      outline-offset: 3px;
+    }
+
+    .btn-primary {
+      background: var(--amber-accent);
+      color: #070a11;
+      box-shadow: 0 4px 16px var(--amber-glow);
+    }
+
+    .btn-primary:hover {
+      background: #ffbe5e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px var(--amber-glow);
+    }
+
+    .btn-secondary {
+      background: rgba(98, 212, 232, 0.1);
+      color: var(--cyan-accent);
+      border-color: rgba(98, 212, 232, 0.25);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(98, 212, 232, 0.2);
+      border-color: var(--cyan-accent);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-primary);
+      border-color: var(--border-subtle);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--text-secondary);
+      transform: translateY(-2px);
+    }
+
+    /* Social Links */
+    .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      transition: all 0.2s;
+    }
+
+    .social-link:hover {
+      color: var(--cyan-accent);
+      border-color: var(--cyan-accent);
+      background: rgba(98, 212, 232, 0.08);
+    }
+
+    /* Skills Grid */
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .skill-category-title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--amber-accent);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .skill-badges-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .skill-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 6px;
+      background: rgba(98, 212, 232, 0.08);
+      border: 1px solid rgba(98, 212, 232, 0.2);
+      color: var(--text-primary);
+    }
+
+    /* Strengths Grid */
+    .strengths-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .strength-item {
+      padding: 1.5rem;
+      border-radius: 12px;
+      background: rgba(13, 20, 36, 0.6);
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .strength-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--amber-accent);
+    }
+
+    .strength-title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .strength-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* Projects Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+    }
+
+    /* Timeline (Experience & Education) */
+    .timeline-container {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 7px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--cyan-accent) 0%, var(--amber-accent) 100%);
+      opacity: 0.4;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2rem;
+    }
+
+    .timeline-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .timeline-node {
+      position: absolute;
+      left: -2rem;
+      top: 1.5rem;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 3px solid var(--cyan-accent);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .timeline-item:hover .timeline-node {
+      border-color: var(--amber-accent);
+      box-shadow: 0 0 12px var(--amber-glow);
+    }
+
+    .timeline-meta {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--amber-accent);
+      margin-bottom: 0.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .timeline-heading {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-subheading {
+      font-size: 0.92rem;
+      color: var(--cyan-accent);
+      margin-bottom: 0.6rem;
+    }
+
+    /* Contact Form & Notice */
+    .contact-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(7, 10, 17, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      transition: all 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--cyan-accent);
+      box-shadow: 0 0 0 3px rgba(98, 212, 232, 0.15);
+      background: rgba(7, 10, 17, 0.95);
+    }
+
+    .form-input.invalid, .form-textarea.invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+    }
+
+    .form-error-msg {
+      font-size: 0.75rem;
+      color: #ef4444;
+      margin-top: 0.3rem;
+      display: none;
+    }
+
+    .form-error-msg.visible {
+      display: block;
+    }
+
+    .form-success-box {
+      display: none;
+      text-align: center;
+      padding: 3rem 1.5rem;
+    }
+
+    .form-success-box.visible {
+      display: block;
+    }
+
+    .checkmark-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(98, 212, 232, 0.15);
+      border: 2px solid var(--cyan-accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      color: var(--cyan-accent);
+      animation: scalePop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scalePop {
+      0% { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Modal (Resume Viewer) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 5, 9, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #0d1424;
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 2.25rem;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+      position: relative;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.35rem 0.6rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--cyan-accent);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2.5rem 1.5rem;
+      background: rgba(7, 10, 17, 0.95);
+      position: relative;
+      z-index: 10;
+    }
+
+    .footer-content {
+      max-width: 1160px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Toast Notification */
+    .toast-pill {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 9999;
+      background: #0d1424;
+      border: 1px solid var(--cyan-accent);
+      color: var(--text-primary);
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      transform: translateY(120%);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toast-pill.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 900px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 2.5rem;
+      }
+      .hero-photo-wrapper {
+        order: -1;
+        width: 220px;
+        height: 220px;
+      }
+      .hero-cta-cluster {
+        justify-content: center;
+      }
+      .contact-layout {
+        grid-template-columns: 1fr;
+      }
+      .topbar-links {
+        display: none;
+      }
+      .mobile-menu-btn {
+        display: block;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .hero-photo-ring-outer {
+        animation: none;
+      }
+      .cursor-dot, .cursor-ring {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Three.js Canvas Container -->
+  <canvas id="webgl-canvas"></canvas>
+  <div id="webgl-fallback" class="webgl-fallback" style="display: none;"></div>
+
+  <!-- Custom Cursor -->
+  <div class="cursor-dot" id="cursor-dot"></div>
+  <div class="cursor-ring" id="cursor-ring"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="topbar-container">
+      <a href="#hero" class="topbar-brand">
+        <span>Bavigadda Naresh</span>
+        <span class="accent-cyan">·</span>
+        <span style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 400; color: var(--text-secondary);">Python Full Stack</span>
+      </a>
+
+      <nav>
+        <ul class="topbar-links">
+          <li><a href="#about" class="topbar-link">About</a></li>
+          <li><a href="#skills" class="topbar-link">Skills</a></li>
+          <li><a href="#projects" class="topbar-link">Projects</a></li>
+          <li><a href="#experience" class="topbar-link">Experience</a></li>
+          <li><a href="#education" class="topbar-link">Education</a></li>
+        </ul>
+      </nav>
+
+      <div class="topbar-actions">
+        <button id="resume-btn-nav" class="btn btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.82rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          Resume
+        </button>
+        <a href="#contact" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.82rem;">Contact</a>
+        <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle navigation menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Drawer -->
+    <div id="mobile-menu" class="mobile-menu-drawer">
+      <a href="#about" class="topbar-link mobile-nav-link">About</a>
+      <a href="#skills" class="topbar-link mobile-nav-link">Skills</a>
+      <a href="#projects" class="topbar-link mobile-nav-link">Projects</a>
+      <a href="#experience" class="topbar-link mobile-nav-link">Experience</a>
+      <a href="#education" class="topbar-link mobile-nav-link">Education</a>
+      <a href="#contact" class="topbar-link mobile-nav-link">Contact</a>
+    </div>
+
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-progress-track">
+      <div id="scroll-progress" class="scroll-progress-bar"></div>
+    </div>
+  </header>
+
+  <!-- Main Content Structure -->
+  <main class="main-container">
+
+    <!-- 01. Hero Section -->
+    <section id="hero" data-section="0">
+      <div class="hero-grid">
+        <div>
+          <div class="section-eyebrow">
+            <span>Portfolio</span>
+            <span aria-hidden="true">·</span>
+            <span>Guntakal, Andhra Pradesh</span>
+          </div>
+
+          <h1 class="scramble-heading" data-text="Bavigadda Naresh" style="font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 4.25rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 0.75rem;">
+            Bavigadda Naresh
+          </h1>
+
+          <div style="font-family: var(--font-mono); font-size: 1.15rem; color: var(--cyan-accent); margin-bottom: 1.5rem; font-weight: 500;">
+            Python Full Stack Developer
+          </div>
+
+          <p style="font-size: 1.05rem; color: var(--text-secondary); max-width: 620px; margin-bottom: 2rem; line-height: 1.65;">
+            Computer Science undergraduate with hands-on Python full-stack experience (including Django) and projects in machine learning and IoT sensor/communication systems. Comfortable working close to the network and hardware layer.
+          </p>
+
+          <div class="hero-cta-cluster" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 2rem;">
+            <a href="#projects" class="btn btn-primary">
+              View Projects
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+            </a>
+            <button id="resume-btn-hero" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              View Full Resume
+            </button>
+            <a href="#contact" class="btn btn-outline">Get In Touch</a>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="https://github.com/bavigaddanaresh" target="_blank" rel="noopener noreferrer" class="social-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>
+              github.com/bavigaddanaresh
+            </a>
+            <a href="https://linkedin.com/in/bavigadda-naresh-239518380" target="_blank" rel="noopener noreferrer" class="social-link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+              linkedin.com/in/bavigadda-naresh
+            </a>
+          </div>
+        </div>
+
+        <div>
+          <div class="hero-photo-wrapper">
+            <div class="hero-photo-ring-outer"></div>
+            <div class="hero-photo-ring-inner"></div>
+            <img id="profile-img" src="/assets/aistudio/linkden_c25d0c82.jpeg" alt="Bavigadda Naresh" class="hero-photo-img" />
+            <div id="profile-fallback" class="hero-photo-fallback" style="display: none;">
+              BN
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02. About Section -->
+    <section id="about" data-section="1">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Profile & Focus</div>
+        <h2 class="section-title scramble-heading" data-text="Career Objective & Strengths">
+          Career Objective & Strengths
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="glass-card reveal-wipe" style="margin-bottom: 2rem;">
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--cyan-accent); margin-bottom: 0.75rem;">
+          Engineering Focus
+        </h3>
+        <p style="font-size: 1.02rem; color: var(--text-primary); line-height: 1.7; max-width: 900px;">
+          Motivated Computer Science undergraduate with hands-on Python full-stack development experience (including Django) and a project background in machine learning and IoT sensor/communication systems. Comfortable working close to the network and hardware layer. Wants to join an engineering team that combines software with systems-level work and grow as a software developer.
+        </p>
+      </div>
+
+      <div class="strengths-grid">
+        <div class="strength-item">
+          <div class="strength-title">
+            <span style="color: var(--amber-accent); font-family: var(--font-mono); font-size: 0.85rem;">01</span>
+            Problem Solving
+          </div>
+          <p class="strength-desc">
+            Strong problem-solving ability, proven and applied in machine learning classification and URL-based feature modeling.
+          </p>
+        </div>
+
+        <div class="strength-item">
+          <div class="strength-title">
+            <span style="color: var(--amber-accent); font-family: var(--font-mono); font-size: 0.85rem;">02</span>
+            Quick Learner
+          </div>
+          <p class="strength-desc">
+            Able to adapt rapidly to new technologies, database architectures, and web frameworks (e.g., Django) in short turnaround cycles.
+          </p>
+        </div>
+
+        <div class="strength-item">
+          <div class="strength-title">
+            <span style="color: var(--amber-accent); font-family: var(--font-mono); font-size: 0.85rem;">03</span>
+            Hardware Aware
+          </div>
+          <p class="strength-desc">
+            Practical knowledge of microcontroller device communication, sensor input networks, and automated feedback loops.
+          </p>
+        </div>
+
+        <div class="strength-item">
+          <div class="strength-title">
+            <span style="color: var(--amber-accent); font-family: var(--font-mono); font-size: 0.85rem;">04</span>
+            Teamwork
+          </div>
+          <p class="strength-desc">
+            Effective collaboration and code integration skills developed through academic capstones and industry internships.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03. Skills Section -->
+    <section id="skills" data-section="2">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Technical Capability</div>
+        <h2 class="section-title scramble-heading" data-text="Technical Skills">
+          Technical Skills
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="skills-grid reveal-wipe">
+        <div class="glass-card">
+          <div class="skill-category-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Languages
+          </div>
+          <div class="skill-badges-flow">
+            <span class="skill-badge" style="border-color: var(--amber-accent); color: var(--amber-accent); font-weight: 600;">Python</span>
+            <span class="skill-badge">JavaScript</span>
+            <span class="skill-badge">HTML</span>
+            <span class="skill-badge">CSS</span>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="skill-category-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Python Frameworks
+          </div>
+          <div class="skill-badges-flow">
+            <span class="skill-badge" style="border-color: var(--cyan-accent); color: var(--cyan-accent); font-weight: 600;">Django</span>
+            <span class="skill-badge">REST API Architecture</span>
+            <span class="skill-badge">Full Stack Modules</span>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="skill-category-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+            Database
+          </div>
+          <div class="skill-badges-flow">
+            <span class="skill-badge" style="border-color: var(--cyan-accent); color: var(--cyan-accent); font-weight: 600;">MySQL</span>
+            <span class="skill-badge">Relational Schema</span>
+            <span class="skill-badge">Query Optimization</span>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="skill-category-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Tools & Workflow
+          </div>
+          <div class="skill-badges-flow">
+            <span class="skill-badge">Git</span>
+            <span class="skill-badge">VS Code</span>
+            <span class="skill-badge">Version Control</span>
+          </div>
+        </div>
+
+        <div class="glass-card" style="grid-column: 1 / -1;">
+          <div class="skill-category-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            Hardware, IoT & Systems
+          </div>
+          <div class="skill-badges-flow">
+            <span class="skill-badge" style="border-color: var(--amber-accent); color: var(--amber-accent);">Microcontroller Device Communication</span>
+            <span class="skill-badge">IoT Sensor Networks</span>
+            <span class="skill-badge">Soil Moisture Sensor Interfacing</span>
+            <span class="skill-badge">Automated Water Supply Control</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04. Projects Section -->
+    <section id="projects" data-section="3">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Engineering Work</div>
+        <h2 class="section-title scramble-heading" data-text="Featured Projects">
+          Featured Projects
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="projects-grid">
+        <!-- Project 1: Phishing Website Detection -->
+        <div class="tilt-card" data-tilt>
+          <div class="tilt-glow"></div>
+          <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--amber-accent); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+            Project 01 · Machine Learning & Security
+          </div>
+
+          <h3 style="font-family: var(--font-display); font-size: 1.45rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; line-height: 1.25;">
+            Phishing Website Detection using Machine Learning
+          </h3>
+
+          <p style="font-size: 0.94rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+            Built a machine learning model to detect phishing websites using URL-based features. Performed systematic data preprocessing and feature extraction; successfully classified websites as phishing or legitimate with high discrimination.
+          </p>
+
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-accent); margin-bottom: 0.6rem;">
+              Key Engineering Highlights:
+            </div>
+            <ul style="list-style: none; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+              <li style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <span style="color: var(--amber-accent);">▹</span>
+                <span>Engineered robust URL lexical feature extractors</span>
+              </li>
+              <li style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <span style="color: var(--amber-accent);">▹</span>
+                <span>Dataset preprocessing, scaling, and categorical handling</span>
+              </li>
+              <li style="display: flex; gap: 0.5rem;">
+                <span style="color: var(--amber-accent);">▹</span>
+                <span>Accurate binary classification of benign vs malicious URLs</span>
+              </li>
+            </ul>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+              <span class="skill-badge">Python</span>
+              <span class="skill-badge">Machine Learning</span>
+              <span class="skill-badge">Feature Extraction</span>
+              <span class="skill-badge">Data Preprocessing</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 2: Smart Irrigation System -->
+        <div class="tilt-card" data-tilt>
+          <div class="tilt-glow"></div>
+          <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-accent); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;">
+            Project 02 · IoT & Hardware Automation
+          </div>
+
+          <h3 style="font-family: var(--font-display); font-size: 1.45rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; line-height: 1.25;">
+            Smart Irrigation System using IoT
+          </h3>
+
+          <p style="font-size: 0.94rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+            Designed and built an automated irrigation system driven by real-time soil moisture sensors, with dynamic water supply regulation orchestrated directly by a microcontroller for precise agricultural conservation.
+          </p>
+
+          <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--amber-accent); margin-bottom: 0.6rem;">
+              Key Engineering Highlights:
+            </div>
+            <ul style="list-style: none; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.25rem;">
+              <li style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <span style="color: var(--cyan-accent);">▹</span>
+                <span>Calibrated soil moisture sensor hardware interfacing</span>
+              </li>
+              <li style="display: flex; gap: 0.5rem; margin-bottom: 0.4rem;">
+                <span style="color: var(--cyan-accent);">▹</span>
+                <span>Microcontroller logic triggering automated water solenoids</span>
+              </li>
+              <li style="display: flex; gap: 0.5rem;">
+                <span style="color: var(--cyan-accent);">▹</span>
+                <span>Closed-loop threshold management preventing crop over-watering</span>
+              </li>
+            </ul>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+              <span class="skill-badge">IoT</span>
+              <span class="skill-badge">Microcontroller</span>
+              <span class="skill-badge">Soil Moisture Sensors</span>
+              <span class="skill-badge">Automation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05. Experience Section -->
+    <section id="experience" data-section="4">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Professional History</div>
+        <h2 class="section-title scramble-heading" data-text="Internships & Experience">
+          Internships & Experience
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+
+        <!-- Internship 1 -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>May 2024 – Jul 2024</span>
+              <span>·</span>
+              <span>Brain O Vision Solutions Pvt Ltd</span>
+            </div>
+            <h3 class="timeline-heading">Python Intern</h3>
+            <div class="timeline-subheading">Agri-Info Cloud-Based Agricultural Service System</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6;">
+              Worked on an agri-info cloud-based agricultural service system. Implemented Python backend services, processed real-time agricultural information feeds, and contributed to modular system workflows.
+            </p>
+          </div>
+        </div>
+
+        <!-- Internship 2 -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>2024 (8 Weeks)</span>
+              <span>·</span>
+              <span>Score: 94 / 100</span>
+            </div>
+            <h3 class="timeline-heading">Full Stack Development Internship</h3>
+            <div class="timeline-subheading">IIDT & Blackbuck Engineers</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6;">
+              Completed an intensive 8-week full stack development internship, finishing with an exceptional evaluation score of 94/100. Delivered full stack implementations across frontend views, backend logic, and database schemas.
+            </p>
+          </div>
+        </div>
+
+        <!-- Internship 3 -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>Apr 2025 – Jun 2025</span>
+              <span>·</span>
+              <span>Ignite Institute</span>
+            </div>
+            <h3 class="timeline-heading">Python Full Stack with Data Science Intern</h3>
+            <div class="timeline-subheading">Web Application Modules & Data Science Integration</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6;">
+              Assisted in the end-to-end development of web application modules, integrating Python backend architectures with data processing pipelines and relational storage.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06. Education Section -->
+    <section id="education" data-section="5">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Academic Background</div>
+        <h2 class="section-title scramble-heading" data-text="Education">
+          Education
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+
+        <!-- B.Tech -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>2022 – 2026</span>
+              <span>·</span>
+              <span style="color: var(--cyan-accent); font-weight: 600;">CGPA: 7.46 / 10</span>
+            </div>
+            <h3 class="timeline-heading">B.Tech in Computer Science and Engineering</h3>
+            <div class="timeline-subheading">Indira Institute of Technology and Sciences (JNTUK)</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55;">
+              Undergraduate program emphasizing data structures, algorithms, database systems, computer networks, machine learning, and full-stack software development.
+            </p>
+          </div>
+        </div>
+
+        <!-- Intermediate -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>2020 – 2022</span>
+              <span>·</span>
+              <span>Percentage: 52.10%</span>
+            </div>
+            <h3 class="timeline-heading">Intermediate (MPC - Mathematics, Physics, Chemistry)</h3>
+            <div class="timeline-subheading">Sastra Junior College</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55;">
+              Higher secondary education with a rigorous core foundation in mathematics, analytical reasoning, physics, and natural sciences.
+            </p>
+          </div>
+        </div>
+
+        <!-- SSC -->
+        <div class="timeline-item">
+          <div class="timeline-node"></div>
+          <div class="glass-card">
+            <div class="timeline-meta">
+              <span>2020</span>
+              <span>·</span>
+              <span>Percentage: 68.33%</span>
+            </div>
+            <h3 class="timeline-heading">Secondary School Certificate (SSC)</h3>
+            <div class="timeline-subheading">Prathibha Vikas EM High School</div>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55;">
+              Secondary education completing standard foundational academic curriculum with distinction.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07. Contact Section -->
+    <section id="contact" data-section="6">
+      <div class="section-title-wrap">
+        <div class="section-eyebrow">Get In Touch</div>
+        <h2 class="section-title scramble-heading" data-text="Contact Me">
+          Contact Me
+        </h2>
+        <div class="title-underline"></div>
+      </div>
+
+      <div class="contact-layout">
+        <!-- Contact Information Glass Panel -->
+        <div class="glass-card">
+          <h3 style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">
+            Let's Collaborate
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">
+            I am actively seeking software engineering roles that combine Python full-stack web architectures with machine learning or systems/hardware-level integration. Feel free to reach out directly.
+          </p>
+
+          <div style="margin-bottom: 1.75rem;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+              Direct Email Address
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span id="email-address-text" style="font-family: var(--font-mono); font-size: 0.98rem; color: var(--cyan-accent); user-select: all;">
+                nareshyadav2807@gmail.com
+              </span>
+              <button id="copy-email-btn" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" title="Copy email address to clipboard">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                Copy Address
+              </button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.75rem;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+              Location
+            </div>
+            <div style="font-size: 0.95rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--amber-accent);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              Guntakal, Andhra Pradesh, India
+            </div>
+          </div>
+
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+              Professional Profiles
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <a href="https://github.com/bavigaddanaresh" target="_blank" rel="noopener noreferrer" class="social-link">
+                GitHub Profile
+              </a>
+              <a href="https://linkedin.com/in/bavigadda-naresh-239518380" target="_blank" rel="noopener noreferrer" class="social-link">
+                LinkedIn Profile
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Form or Fallback Notice Card -->
+        <div class="glass-card" id="form-container-card">
+          <!-- Live Form -->
+          <form id="portfolio-contact-form">
+            <h4 style="font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem;">
+              Send a Message
+            </h4>
+
+            <div class="form-group">
+              <label for="contact-name" class="form-label">Your Name</label>
+              <input type="text" id="contact-name" class="form-input" placeholder="e.g. John Doe" required />
+              <div class="form-error-msg" id="name-error">Please enter your name</div>
+            </div>
+
+            <div class="form-group">
+              <label for="contact-email" class="form-label">Your Email</label>
+              <input type="email" id="contact-email" class="form-input" placeholder="john@example.com" required />
+              <div class="form-error-msg" id="email-error">Please provide a valid email address</div>
+            </div>
+
+            <div class="form-group">
+              <label for="contact-message" class="form-label">Message</label>
+              <textarea id="contact-message" class="form-textarea" rows="4" placeholder="Hello Naresh, I reviewed your portfolio and would like to discuss a role..." required></textarea>
+              <div class="form-error-msg" id="message-error">Please enter your message (at least 10 characters)</div>
+            </div>
+
+            <button type="submit" id="submit-form-btn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <span>Transmit Message</span>
+            </button>
+          </form>
+
+          <!-- Fallback Notice Card when FORM_ENDPOINT is empty -->
+          <div id="fallback-email-notice" style="display: none; margin-top: 1.25rem; padding: 1.25rem; border-radius: 10px; background: rgba(255, 179, 71, 0.08); border: 1px solid rgba(255, 179, 71, 0.3);">
+            <div style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--amber-accent); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              Direct Message Dispatch
+            </div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem;">
+              Dispatch this message directly to Naresh's inbox using your preferred email service:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              <a id="send-with-gmail-btn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 0.55rem 1rem; font-size: 0.84rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                Send with Gmail (Pre-filled)
+              </a>
+              <a id="send-with-mailto-btn" href="#" class="btn btn-secondary" style="padding: 0.55rem 1rem; font-size: 0.84rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                Other Email App (Default Client)
+              </a>
+            </div>
+          </div>
+
+          <!-- Success Screen (Formspree mode) -->
+          <div id="form-success" class="form-success-box">
+            <div class="checkmark-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">
+              Message Sent Successfully!
+            </h4>
+            <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem; line-height: 1.6;">
+              Thank you for reaching out. Your message has been transmitted and will be reviewed shortly.
+            </p>
+            <button id="reset-form-btn" class="btn btn-outline">
+              Send Another Message
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Resume Modal -->
+  <div id="resume-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-resume-title">
+    <div class="modal-card">
+      <button id="close-modal-btn" class="modal-close-btn" aria-label="Close resume modal">&times;</button>
+
+      <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+        <h3 id="modal-resume-title" style="font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: var(--text-primary);">
+          Bavigadda Naresh
+        </h3>
+        <div style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--cyan-accent); margin-bottom: 0.5rem;">
+          Python Full Stack Developer · Guntakal, Andhra Pradesh
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 0.75rem;">
+          <span>Email: nareshyadav2807@gmail.com</span>
+          <span>·</span>
+          <span>GitHub: github.com/bavigaddanaresh</span>
+          <span>·</span>
+          <span>LinkedIn: linkedin.com/in/bavigadda-naresh-239518380</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--amber-accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Career Objective
+        </h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+          Motivated Computer Science undergraduate with hands-on Python full-stack development experience (including Django) and a project background in machine learning and IoT sensor/communication systems. Comfortable working close to the network and hardware layer. Eager to contribute to a dynamic engineering team that combines software with systems-level work.
+        </p>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--amber-accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Technical Skills
+        </h4>
+        <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+          <strong>Languages:</strong> Python, JavaScript, HTML, CSS<br />
+          <strong>Python Frameworks:</strong> Django<br />
+          <strong>Database:</strong> MySQL<br />
+          <strong>Tools:</strong> Git, VS Code<br />
+          <strong>Specialized:</strong> Microcontroller device communication (IoT/sensor networks)
+        </p>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--amber-accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Projects
+        </h4>
+        <div style="margin-bottom: 0.75rem;">
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">1. Phishing Website Detection using Machine Learning</div>
+          <div style="font-size: 0.86rem; color: var(--text-secondary);">Built a model using URL-based features, performed preprocessing and feature extraction; classified websites as phishing or legitimate.</div>
+        </div>
+        <div>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">2. Smart Irrigation System using IoT</div>
+          <div style="font-size: 0.86rem; color: var(--text-secondary);">Automated irrigation with soil moisture sensors, water supply controlled by a microcontroller.</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--amber-accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Internships
+        </h4>
+        <div style="margin-bottom: 0.6rem; font-size: 0.88rem;">
+          <strong style="color: var(--text-primary);">Python Intern</strong>, Brain O Vision Solutions Pvt Ltd (May 2024 – Jul 2024)<br />
+          <span style="color: var(--text-secondary);">Worked on an agri-info cloud-based agricultural service system.</span>
+        </div>
+        <div style="margin-bottom: 0.6rem; font-size: 0.88rem;">
+          <strong style="color: var(--text-primary);">Full Stack Development Internship</strong>, IIDT & Blackbuck Engineers (2024)<br />
+          <span style="color: var(--text-secondary);">Completed an 8-week full stack development internship; scored 94/100.</span>
+        </div>
+        <div style="font-size: 0.88rem;">
+          <strong style="color: var(--text-primary);">Python Full Stack with Data Science</strong>, Ignite Institute (Apr 2025 – Jun 2025)<br />
+          <span style="color: var(--text-secondary);">Assisted in development of web application modules.</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.75rem;">
+        <h4 style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--amber-accent); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Education
+        </h4>
+        <div style="font-size: 0.88rem; margin-bottom: 0.4rem;">
+          <strong style="color: var(--text-primary);">B.Tech in Computer Science and Engineering</strong>, 2022 – 2026<br />
+          <span style="color: var(--text-secondary);">Indira Institute of Technology and Sciences (JNTUK) · CGPA 7.46 / 10</span>
+        </div>
+        <div style="font-size: 0.88rem; margin-bottom: 0.4rem;">
+          <strong style="color: var(--text-primary);">Intermediate (MPC)</strong>, 2020 – 2022<br />
+          <span style="color: var(--text-secondary);">Sastra Junior College · 52.10%</span>
+        </div>
+        <div style="font-size: 0.88rem;">
+          <strong style="color: var(--text-primary);">SSC</strong>, 2020<br />
+          <span style="color: var(--text-secondary);">Prathibha Vikas EM High School · 68.33%</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button id="print-resume-btn" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.84rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print / Save PDF
+        </button>
+        <button id="close-modal-bottom-btn" class="btn btn-outline" style="padding: 0.45rem 1rem; font-size: 0.84rem;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div id="toast" class="toast-pill">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--cyan-accent);"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toast-text">Address copied to clipboard!</span>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div>
+        © 2026 <strong style="color: var(--text-primary);">Bavigadda Naresh</strong>. Python Full Stack Developer.
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">
+        Hardware Aware · Machine Learning · IoT Systems
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN CLIENT LOGIC: THREE.JS 3D ENGINE & INTERACTION SCRIPTS            -->
+  <!-- ===================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ---------------------------------------------------------------------
+         CONFIGURATION CONSTANTS (Formspree Endpoint & Profile Photo)
+         --------------------------------------------------------------------- */
+      // If set (e.g. 'https://formspree.io/f/xyz'), submits form via JSON POST.
+      // If left empty, triggers verified fallback buttons (Gmail web compose & mailto).
+      const FORM_ENDPOINT = '';
+
+      // Profile photo source. Can be a local path or a base64 data URI (data:image/jpeg;base64,...).
+      const PROFILE_PHOTO_SRC = '/assets/aistudio/linkden_c25d0c82.jpeg';
+      const CONTACT_EMAIL = 'nareshyadav2807@gmail.com';
+
+      // Set profile photo with error fallback
+      const profileImg = document.getElementById('profile-img');
+      const profileFallback = document.getElementById('profile-fallback');
+      if (profileImg) {
+        profileImg.src = PROFILE_PHOTO_SRC;
+        profileImg.onerror = function () {
+          profileImg.style.display = 'none';
+          if (profileFallback) profileFallback.style.display = 'flex';
+        };
+      }
+
+      /* ---------------------------------------------------------------------
+         REDUCED MOTION CHECK
+         --------------------------------------------------------------------- */
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---------------------------------------------------------------------
+         CUSTOM CURSOR (Small dot + Lagging ring)
+         --------------------------------------------------------------------- */
+      const cursorDot = document.getElementById('cursor-dot');
+      const cursorRing = document.getElementById('cursor-ring');
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let ringX = mouseX;
+      let ringY = mouseY;
+
+      if (!prefersReducedMotion && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        window.addEventListener('mousemove', function (e) {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+          if (cursorDot) {
+            cursorDot.style.transform = 'translate(' + (mouseX - 3) + 'px, ' + (mouseY - 3) + 'px)';
+          }
+        });
+
+        // Hover scale on interactive elements
+        const hoverTargets = document.querySelectorAll('a, button, input, textarea, .tilt-card, .glass-card');
+        hoverTargets.forEach(function (el) {
+          el.addEventListener('mouseenter', function () {
+            document.body.classList.add('cursor-hover');
+          });
+          el.addEventListener('mouseleave', function () {
+            document.body.classList.remove('cursor-hover');
+          });
+        });
+
+        // Cursor smooth lag loop
+        function updateCursorRing() {
+          ringX += (mouseX - ringX) * 0.15;
+          ringY += (mouseY - ringY) * 0.15;
+          if (cursorRing) {
+            cursorRing.style.transform = 'translate(' + (ringX - 16) + 'px, ' + (ringY - 16) + 'px)';
+          }
+          requestAnimationFrame(updateCursorRing);
+        }
+        requestAnimationFrame(updateCursorRing);
+      }
+
+      /* ---------------------------------------------------------------------
+         THREE.JS 3D SCENE & FLIGHT SYSTEM
+         --------------------------------------------------------------------- */
+      const canvas = document.getElementById('webgl-canvas');
+      const fallbackDiv = document.getElementById('webgl-fallback');
+
+      let scene, camera, renderer;
+      let pointCloud, lineMesh;
+      let sectionObjects = [];
+      const SECTION_COUNT = 7;
+
+      // Particle parameters
+      const PARTICLE_COUNT = 1600;
+      let particlePositions;
+      let particleBasePositions;
+      let particleVelocities;
+      let colors;
+
+      // Camera spline curve in 3D
+      let cameraCurve;
+      let targetFOV = 60;
+      let currentFOV = 60;
+      let lastScrollY = window.scrollY;
+      let scrollVelocity = 0;
+      let normalizedScroll = 0;
+
+      // Mouse normalized coordinates for 3D interaction (-1 to 1)
+      let normMouseX = 0;
+      let normMouseY = 0;
+
+      function initThree() {
+        if (!window.THREE) {
+          showFallback();
+          return;
+        }
+
+        try {
+          scene = new THREE.Scene();
+          scene.fog = new THREE.FogExp2(0x070a11, 0.0075);
+
+          const aspect = window.innerWidth / window.innerHeight;
+          camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 1200);
+          camera.position.set(0, 0, 100);
+
+          renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true,
+            powerPreference: 'high-performance'
+          });
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setClearColor(0x070a11, 1);
+
+          // Lighting rig
+          const ambientLight = new THREE.AmbientLight(0x0f1c30, 1.2);
+          scene.add(ambientLight);
+
+          const dirLightCyan = new THREE.DirectionalLight(0x62d4e8, 2.0);
+          dirLightCyan.position.set(100, 200, 150);
+          scene.add(dirLightCyan);
+
+          const dirLightAmber = new THREE.DirectionalLight(0xffb347, 1.6);
+          dirLightAmber.position.set(-100, -150, -100);
+          scene.add(dirLightAmber);
+
+          // Create 3D Camera Flight Curve (Spline with 8 control points)
+          cameraCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0, 0, 180),        // Hero
+            new THREE.Vector3(30, -50, 100),     // About
+            new THREE.Vector3(-40, -120, 20),    // Skills
+            new THREE.Vector3(35, -200, -60),    // Projects
+            new THREE.Vector3(-30, -280, -140),  // Experience
+            new THREE.Vector3(25, -360, -220),   // Education
+            new THREE.Vector3(0, -440, -300),    // Contact
+            new THREE.Vector3(0, -490, -350)     // Final rest
+          ]);
+
+          buildParticleNetwork();
+          buildSectionWireframeObjects();
+
+          // Event Listeners for 3D
+          window.addEventListener('resize', onWindowResize, false);
+          window.addEventListener('mousemove', onMouseMove3D, false);
+
+          requestAnimationFrame(animateThree);
+        } catch (e) {
+          console.warn('WebGL initialization failed, falling back to gradient background:', e);
+          showFallback();
+        }
+      }
+
+      function showFallback() {
+        if (canvas) canvas.style.display = 'none';
+        if (fallbackDiv) fallbackDiv.style.display = 'block';
+      }
+
+      // Build glowing cyan/amber nodes and connecting line network
+      function buildParticleNetwork() {
+        const pGeo = new THREE.BufferGeometry();
+        particlePositions = new Float32Array(PARTICLE_COUNT * 3);
+        particleBasePositions = new Float32Array(PARTICLE_COUNT * 3);
+        particleVelocities = new Float32Array(PARTICLE_COUNT * 3);
+        colors = new Float32Array(PARTICLE_COUNT * 3);
+
+        const cyanColor = new THREE.Color(0x62d4e8);
+        const amberColor = new THREE.Color(0xffb347);
+
+        // Distribute particles along the volume of the camera flight curve
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const t = Math.random();
+          const pointOnCurve = cameraCurve.getPoint(t);
+
+          const spreadRadius = 90 + Math.random() * 60;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = (Math.random() - 0.5) * Math.PI;
+
+          const px = pointOnCurve.x + spreadRadius * Math.cos(theta) * Math.cos(phi);
+          const py = pointOnCurve.y + spreadRadius * Math.sin(phi);
+          const pz = pointOnCurve.z + spreadRadius * Math.sin(theta) * Math.cos(phi);
+
+          particlePositions[i * 3] = px;
+          particlePositions[i * 3 + 1] = py;
+          particlePositions[i * 3 + 2] = pz;
+
+          particleBasePositions[i * 3] = px;
+          particleBasePositions[i * 3 + 1] = py;
+          particleBasePositions[i * 3 + 2] = pz;
+
+          particleVelocities[i * 3] = (Math.random() - 0.5) * 0.15;
+          particleVelocities[i * 3 + 1] = (Math.random() - 0.5) * 0.15;
+          particleVelocities[i * 3 + 2] = (Math.random() - 0.5) * 0.15;
+
+          // ~22% Amber highlights, ~78% Electric Cyan
+          const isAmber = Math.random() < 0.22;
+          const chosenColor = isAmber ? amberColor : cyanColor;
+
+          colors[i * 3] = chosenColor.r;
+          colors[i * 3 + 1] = chosenColor.g;
+          colors[i * 3 + 2] = chosenColor.b;
+        }
+
+        pGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        pGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        // Procedural circular glow texture for particles (zero 404 dependencies)
+        const dotCanvas = document.createElement('canvas');
+        dotCanvas.width = 64;
+        dotCanvas.height = 64;
+        const ctx = dotCanvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.3, 'rgba(98,212,232,0.85)');
+        gradient.addColorStop(0.7, 'rgba(98,212,232,0.2)');
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 64, 64);
+
+        const dotTexture = new THREE.CanvasTexture(dotCanvas);
+
+        const pMat = new THREE.PointsMaterial({
+          size: 4.5,
+          map: dotTexture,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+
+        pointCloud = new THREE.Points(pGeo, pMat);
+        scene.add(pointCloud);
+
+        // Dynamic Connecting Lines between nearby nodes
+        const MAX_LINES = 1200;
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(MAX_LINES * 2 * 3);
+        const lineColors = new Float32Array(MAX_LINES * 2 * 3);
+
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        lineGeo.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+
+        const lineMat = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.35,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+
+        lineMesh = new THREE.LineSegments(lineGeo, lineMat);
+        scene.add(lineMesh);
+      }
+
+      // Build 7 wireframe 3D geometric objects anchored along each section
+      function buildSectionWireframeObjects() {
+        // Wireframe geometries per spec:
+        // 1. Torus knot (Hero)
+        // 2. Icosahedron (About)
+        // 3. Concentric rings (Skills)
+        // 4. Octahedron (Projects)
+        // 5. Helix cylinder / helix points (Experience)
+        // 6. Dodecahedron (Education)
+        // 7. Concentric spheres / rings (Contact)
+
+        const cyanWireMat = new THREE.MeshStandardMaterial({
+          color: 0x62d4e8,
+          wireframe: true,
+          emissive: 0x113344,
+          roughness: 0.3,
+          metalness: 0.7
+        });
+
+        const amberWireMat = new THREE.MeshStandardMaterial({
+          color: 0xffb347,
+          wireframe: true,
+          emissive: 0x442200,
+          roughness: 0.3,
+          metalness: 0.7
+        });
+
+        const geometries = [
+          new THREE.TorusKnotGeometry(14, 3.5, 96, 16),      // 0 Hero
+          new THREE.IcosahedronGeometry(18, 1),              // 1 About
+          new THREE.TorusGeometry(18, 2.5, 16, 50),          // 2 Skills
+          new THREE.OctahedronGeometry(18, 1),               // 3 Projects
+          new THREE.CylinderGeometry(12, 12, 28, 16, 8, true),// 4 Experience (Helix cylinder)
+          new THREE.DodecahedronGeometry(17, 1),             // 5 Education
+          new THREE.SphereGeometry(18, 16, 12)               // 6 Contact
+        ];
+
+        for (let i = 0; i < SECTION_COUNT; i++) {
+          const t = i / (SECTION_COUNT - 1);
+          const curvePos = cameraCurve.getPoint(t);
+
+          // Position object slightly offset to right/behind content
+          const group = new THREE.Group();
+          const mat = (i % 2 === 0) ? cyanWireMat : amberWireMat;
+          const mesh = new THREE.Mesh(geometries[i], mat);
+
+          // If skills (index 2), add concentric inner ring
+          if (i === 2) {
+            const innerRing = new THREE.Mesh(new THREE.TorusGeometry(11, 1.8, 16, 36), amberWireMat);
+            innerRing.rotation.x = Math.PI / 2;
+            group.add(innerRing);
+          }
+          // If contact (index 6), add concentric nested sphere
+          if (i === 6) {
+            const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(10, 12, 8), amberWireMat);
+            group.add(innerSphere);
+          }
+
+          group.add(mesh);
+
+          // Offset to right/rear so text remains unobstructed
+          group.position.set(curvePos.x + 28, curvePos.y - 4, curvePos.z - 35);
+          group.scale.set(0.6, 0.6, 0.6);
+
+          scene.add(group);
+          sectionObjects.push(group);
+        }
+      }
+
+      function onMouseMove3D(e) {
+        normMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+        normMouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+      }
+
+      function onWindowResize() {
+        if (!camera || !renderer) return;
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      // Main Render & Physics Tick Loop
+      let clock = new THREE.Clock();
+      let frameCount = 0;
+
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+
+        const delta = clock.getDelta();
+        const elapsedTime = clock.getElapsedTime();
+        frameCount++;
+
+        // 1. Calculate scroll depth & smooth velocity
+        const currentScrollY = window.scrollY;
+        const maxScroll = Math.max(document.body.scrollHeight - window.innerHeight, 1);
+        normalizedScroll = Math.min(Math.max(currentScrollY / maxScroll, 0), 1);
+
+        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
+        lastScrollY = currentScrollY;
+
+        // 2. Camera Spline Position along flight path
+        if (cameraCurve) {
+          const camTargetPos = cameraCurve.getPoint(normalizedScroll);
+          const camLookAhead = cameraCurve.getPoint(Math.min(normalizedScroll + 0.05, 1));
+
+          // Subtle tilt with mouse
+          const tiltX = normMouseX * 10;
+          const tiltY = normMouseY * 8;
+
+          camera.position.x += (camTargetPos.x + tiltX - camera.position.x) * 0.07;
+          camera.position.y += (camTargetPos.y + tiltY - camera.position.y) * 0.07;
+          camera.position.z += (camTargetPos.z - camera.position.z) * 0.07;
+
+          camera.lookAt(camLookAhead.x, camLookAhead.y, camLookAhead.z - 50);
+
+          // Dynamic FOV widening with scroll speed (smooth spring)
+          targetFOV = 60 + Math.min(scrollVelocity * 0.45, 22);
+          currentFOV += (targetFOV - currentFOV) * 0.08;
+          camera.fov = currentFOV;
+          camera.updateProjectionMatrix();
+        }
+
+        // 3. Update Section 3D Objects: scale up current section's object
+        const activeSectionIndex = Math.min(Math.floor(normalizedScroll * (SECTION_COUNT - 0.2)), SECTION_COUNT - 1);
+
+        for (let i = 0; i < sectionObjects.length; i++) {
+          const obj = sectionObjects[i];
+          if (!obj) continue;
+
+          // Rotation
+          obj.rotation.x += 0.006 * (i % 2 === 0 ? 1 : -1);
+          obj.rotation.y += 0.009;
+
+          // Scale & proximity to camera
+          const distToActive = Math.abs(i - (normalizedScroll * (SECTION_COUNT - 1)));
+          const targetScale = Math.max(1.3 - distToActive * 0.7, 0.45);
+          obj.scale.x += (targetScale - obj.scale.x) * 0.08;
+          obj.scale.y += (targetScale - obj.scale.y) * 0.08;
+          obj.scale.z += (targetScale - obj.scale.z) * 0.08;
+        }
+
+        // 4. Cursor Repulsion Physics on Particles
+        if (pointCloud && particlePositions && particleBasePositions) {
+          // Repel point in 3D near the camera's view ray
+          const rayOrigin = camera.position;
+          const mouseWorldX = rayOrigin.x + normMouseX * 45;
+          const mouseWorldY = rayOrigin.y + normMouseY * 45;
+
+          for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const idx = i * 3;
+            let px = particlePositions[idx];
+            let py = particlePositions[idx + 1];
+            let pz = particlePositions[idx + 2];
+
+            const bx = particleBasePositions[idx];
+            const by = particleBasePositions[idx + 1];
+            const bz = particleBasePositions[idx + 2];
+
+            // Gentle ambient float
+            const floatOffset = Math.sin(elapsedTime * 1.5 + i) * 0.15;
+            particlePositions[idx + 1] = py + floatOffset * 0.1;
+
+            // Distance to mouse ray
+            const dx = px - mouseWorldX;
+            const dy = py - mouseWorldY;
+            const distSq = dx * dx + dy * dy;
+
+            if (distSq < 1600 && Math.abs(pz - camera.position.z) < 180) {
+              const dist = Math.sqrt(distSq);
+              const force = (1 - dist / 40) * 1.8;
+              particlePositions[idx] += (dx / dist) * force;
+              particlePositions[idx + 1] += (dy / dist) * force;
+            } else {
+              // Return gently to base
+              particlePositions[idx] += (bx - px) * 0.04;
+              particlePositions[idx + 1] += (by - py) * 0.04;
+              particlePositions[idx + 2] += (bz - pz) * 0.04;
+            }
+          }
+
+          pointCloud.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // 5. Connect Dynamic Lines (every 3 frames for high fps)
+        if (lineMesh && frameCount % 3 === 0) {
+          const lPos = lineMesh.geometry.attributes.position.array;
+          const lCol = lineMesh.geometry.attributes.color.array;
+          let lineIdx = 0;
+          const maxLines = 1200;
+          const connectDistSq = 55 * 55;
+
+          // Connect a curated subset of nodes near camera
+          for (let i = 0; i < 400 && lineIdx < maxLines; i += 2) {
+            const idxA = i * 3;
+            const ax = particlePositions[idxA];
+            const ay = particlePositions[idxA + 1];
+            const az = particlePositions[idxA + 2];
+
+            // Filter to nodes within visible camera depth
+            if (Math.abs(az - camera.position.z) > 160) continue;
+
+            for (let j = i + 1; j < Math.min(i + 14, 400) && lineIdx < maxLines; j++) {
+              const idxB = j * 3;
+              const bx = particlePositions[idxB];
+              const by = particlePositions[idxB + 1];
+              const bz = particlePositions[idxB + 2];
+
+              const ddx = ax - bx;
+              const ddy = ay - by;
+              const ddz = az - bz;
+              const d2 = ddx * ddx + ddy * ddy + ddz * ddz;
+
+              if (d2 < connectDistSq) {
+                const p = lineIdx * 6;
+                lPos[p] = ax;
+                lPos[p + 1] = ay;
+                lPos[p + 2] = az;
+                lPos[p + 3] = bx;
+                lPos[p + 4] = by;
+                lPos[p + 5] = bz;
+
+                // Color lines by altitude / gradient
+                const alpha = 1 - Math.sqrt(d2) / 55;
+                lCol[p] = 0.38 * alpha;
+                lCol[p + 1] = 0.83 * alpha;
+                lCol[p + 2] = 0.91 * alpha;
+
+                lCol[p + 3] = 1.0 * alpha;
+                lCol[p + 4] = 0.7 * alpha;
+                lCol[p + 5] = 0.28 * alpha;
+
+                lineIdx++;
+              }
+            }
+          }
+
+          // Clear remaining lines
+          for (let k = lineIdx * 6; k < lPos.length; k++) {
+            lPos[k] = 0;
+            lCol[k] = 0;
+          }
+
+          lineMesh.geometry.attributes.position.needsUpdate = true;
+          lineMesh.geometry.attributes.color.needsUpdate = true;
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      // Initialize WebGL
+      initThree();
+
+      /* ---------------------------------------------------------------------
+         SCROLL PROGRESS & ACTIVE NAVIGATION HIGHLIGHTS
+         --------------------------------------------------------------------- */
+      const scrollProgressBar = document.getElementById('scroll-progress');
+      const sections = document.querySelectorAll('section');
+      const navLinks = document.querySelectorAll('.topbar-link:not(.mobile-nav-link)');
+
+      window.addEventListener('scroll', function () {
+        const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0;
+        if (scrollProgressBar) {
+          scrollProgressBar.style.width = Math.min(Math.max(progress, 0), 100) + '%';
+        }
+
+        // Active section link highlighting
+        let currentSectionId = 'hero';
+        sections.forEach(function (sec) {
+          const rect = sec.getBoundingClientRect();
+          if (rect.top <= window.innerHeight * 0.45 && rect.bottom >= window.innerHeight * 0.2) {
+            currentSectionId = sec.getAttribute('id');
+          }
+        });
+
+        navLinks.forEach(function (link) {
+          if (link.getAttribute('href') === '#' + currentSectionId) {
+            link.classList.add('active');
+          } else {
+            link.classList.remove('active');
+          }
+        });
+      }, { passive: true });
+
+      /* ---------------------------------------------------------------------
+         MOBILE HAMBURGER MENU
+         --------------------------------------------------------------------- */
+      const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+      const mobileMenu = document.getElementById('mobile-menu');
+
+      if (mobileMenuToggle && mobileMenu) {
+        mobileMenuToggle.addEventListener('click', function () {
+          mobileMenu.classList.toggle('open');
+        });
+
+        document.querySelectorAll('.mobile-nav-link').forEach(function (link) {
+          link.addEventListener('click', function () {
+            mobileMenu.classList.remove('open');
+          });
+        });
+      }
+
+      /* ---------------------------------------------------------------------
+         SCRAMBLE TEXT DECODE EFFECT & REVEAL OBSERVER
+         --------------------------------------------------------------------- */
+      const scrambleChars = '0123456789ABCDEF!@#$%&*<>_+=';
+
+      function scrambleText(element, targetText, duration) {
+        if (prefersReducedMotion) {
+          element.textContent = targetText;
+          return;
+        }
+
+        let start = null;
+        const length = targetText.length;
+
+        function step(timestamp) {
+          if (!start) start = timestamp;
+          const elapsed = timestamp - start;
+          const progress = Math.min(elapsed / duration, 1);
+          const revealedCount = Math.floor(progress * length);
+
+          let output = '';
+          for (let i = 0; i < length; i++) {
+            if (i < revealedCount) {
+              output += targetText[i];
+            } else if (targetText[i] === ' ') {
+              output += ' ';
+            } else {
+              output += scrambleChars[Math.floor(Math.random() * scrambleChars.length)];
+            }
+          }
+
+          element.textContent = output;
+
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            element.textContent = targetText;
+          }
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      // Intersection Observer for Section Reveal & Text Scramble
+      const sectionObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+
+            // Trigger text scramble on heading inside section
+            const heading = entry.target.querySelector('.scramble-heading');
+            if (heading && !heading.dataset.scrambled) {
+              heading.dataset.scrambled = 'true';
+              const text = heading.dataset.text || heading.textContent.trim();
+              scrambleText(heading, text, 700);
+            }
+          }
+        });
+      }, { threshold: 0.15 });
+
+      sections.forEach(function (sec) {
+        sectionObserver.observe(sec);
+      });
+
+      /* ---------------------------------------------------------------------
+         3D TILT CARDS WITH CURSOR-FOLLOWING GLOW
+         --------------------------------------------------------------------- */
+      if (!prefersReducedMotion && window.matchMedia('(hover: hover)').matches) {
+        const tiltCards = document.querySelectorAll('[data-tilt]');
+
+        tiltCards.forEach(function (card) {
+          card.addEventListener('mousemove', function (e) {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -7;
+            const rotateY = ((x - centerX) / centerX) * 7;
+
+            card.style.transform = 'perspective(1000px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px)';
+            card.style.setProperty('--mouse-x', x + 'px');
+            card.style.setProperty('--mouse-y', y + 'px');
+          });
+
+          card.addEventListener('mouseleave', function () {
+            card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
+          });
+        });
+      }
+
+      /* ---------------------------------------------------------------------
+         CONTACT FORM DISPATCH & DIRECT EMAIL FALLBACK SYSTEM
+         --------------------------------------------------------------------- */
+      const contactForm = document.getElementById('portfolio-contact-form');
+      const fallbackNotice = document.getElementById('fallback-email-notice');
+      const formSuccess = document.getElementById('form-success');
+      const resetFormBtn = document.getElementById('reset-form-btn');
+
+      const nameInput = document.getElementById('contact-name');
+      const emailInput = document.getElementById('contact-email');
+      const messageInput = document.getElementById('contact-message');
+
+      const nameError = document.getElementById('name-error');
+      const emailError = document.getElementById('email-error');
+      const messageError = document.getElementById('message-error');
+
+      const sendWithGmailBtn = document.getElementById('send-with-gmail-btn');
+      const sendWithMailtoBtn = document.getElementById('send-with-mailto-btn');
+
+      function validateForm() {
+        let valid = true;
+
+        if (!nameInput.value.trim()) {
+          nameInput.classList.add('invalid');
+          nameError.classList.add('visible');
+          valid = false;
+        } else {
+          nameInput.classList.remove('invalid');
+          nameError.classList.remove('visible');
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(emailInput.value.trim())) {
+          emailInput.classList.add('invalid');
+          emailError.classList.add('visible');
+          valid = false;
+        } else {
+          emailInput.classList.remove('invalid');
+          emailError.classList.remove('visible');
+        }
+
+        if (messageInput.value.trim().length < 10) {
+          messageInput.classList.add('invalid');
+          messageError.classList.add('visible');
+          valid = false;
+        } else {
+          messageInput.classList.remove('invalid');
+          messageError.classList.remove('visible');
+        }
+
+        return valid;
+      }
+
+      // Update Fallback Links with current form content
+      function updateFallbackLinks() {
+        const senderName = encodeURIComponent(nameInput.value.trim() || 'Colleague');
+        const senderEmail = encodeURIComponent(emailInput.value.trim() || '');
+        const messageBody = encodeURIComponent(
+          (messageInput.value.trim() || 'Hello Naresh, I would like to get in touch with you regarding an opportunity.') +
+          '\n\n---\nFrom: ' + (nameInput.value.trim() || 'Anonymous') +
+          (emailInput.value.trim() ? ' (' + emailInput.value.trim() + ')' : '')
+        );
+        const subject = encodeURIComponent('Portfolio Inquiry from ' + (nameInput.value.trim() || 'Visitor'));
+
+        if (sendWithGmailBtn) {
+          sendWithGmailBtn.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + CONTACT_EMAIL + '&su=' + subject + '&body=' + messageBody;
+        }
+        if (sendWithMailtoBtn) {
+          sendWithMailtoBtn.href = 'mailto:' + CONTACT_EMAIL + '?subject=' + subject + '&body=' + messageBody;
+        }
+      }
+
+      // Listen to typing to keep prefilled links fresh
+      [nameInput, emailInput, messageInput].forEach(function (inp) {
+        if (inp) {
+          inp.addEventListener('input', updateFallbackLinks);
+        }
+      });
+      updateFallbackLinks();
+
+      if (contactForm) {
+        contactForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          if (!validateForm()) return;
+
+          const submitBtn = document.getElementById('submit-form-btn');
+          const originalBtnHtml = submitBtn.innerHTML;
+
+          // If FORM_ENDPOINT is set, attempt JSON POST (e.g. Formspree)
+          if (FORM_ENDPOINT && FORM_ENDPOINT.trim() !== '') {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Transmitting...</span>';
+
+            fetch(FORM_ENDPOINT, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                name: nameInput.value.trim(),
+                email: emailInput.value.trim(),
+                message: messageInput.value.trim()
+              })
+            })
+            .then(function (res) {
+              if (res.ok) {
+                contactForm.style.display = 'none';
+                if (fallbackNotice) fallbackNotice.style.display = 'none';
+                formSuccess.classList.add('visible');
+              } else {
+                throw new Error('Endpoint returned error status');
+              }
+            })
+            .catch(function () {
+              // On endpoint failure, gracefully reveal direct dispatch fallback
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalBtnHtml;
+              updateFallbackLinks();
+              if (fallbackNotice) fallbackNotice.style.display = 'block';
+              showToast('Endpoint unavailable. Please use direct email dispatch below.');
+            });
+          } else {
+            // When FORM_ENDPOINT is empty, never fake a sent state.
+            // Immediately reveal the verified one-click dispatch options
+            updateFallbackLinks();
+            if (fallbackNotice) {
+              fallbackNotice.style.display = 'block';
+              fallbackNotice.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            showToast('Form ready! Select your preferred email app below to send.');
+          }
+        });
+      }
+
+      if (resetFormBtn) {
+        resetFormBtn.addEventListener('click', function () {
+          formSuccess.classList.remove('visible');
+          contactForm.reset();
+          contactForm.style.display = 'block';
+          if (fallbackNotice) fallbackNotice.style.display = 'none';
+        });
+      }
+
+      /* ---------------------------------------------------------------------
+         COPY EMAIL ACTION & TOAST SYSTEM
+         --------------------------------------------------------------------- */
+      const copyEmailBtn = document.getElementById('copy-email-btn');
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      let toastTimeout = null;
+
+      function showToast(message) {
+        if (!toast || !toastText) return;
+        toastText.textContent = message;
+        toast.classList.add('visible');
+
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(function () {
+          toast.classList.remove('visible');
+        }, 3200);
+      }
+
+      if (copyEmailBtn) {
+        copyEmailBtn.addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(CONTACT_EMAIL).then(function () {
+              showToast('Email address copied to clipboard!');
+            }).catch(function () {
+              fallbackCopy(CONTACT_EMAIL);
+            });
+          } else {
+            fallbackCopy(CONTACT_EMAIL);
+          }
+        });
+      }
+
+      function fallbackCopy(text) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand('copy');
+          showToast('Email address copied to clipboard!');
+        } catch (err) {
+          showToast('Please select and copy: ' + text);
+        }
+        document.body.removeChild(temp);
+      }
+
+      /* ---------------------------------------------------------------------
+         RESUME MODAL HANDLERS
+         --------------------------------------------------------------------- */
+      const resumeModal = document.getElementById('resume-modal');
+      const navResumeBtn = document.getElementById('resume-btn-nav');
+      const heroResumeBtn = document.getElementById('resume-btn-hero');
+      const closeModalBtn = document.getElementById('close-modal-btn');
+      const closeModalBottomBtn = document.getElementById('close-modal-bottom-btn');
+      const printResumeBtn = document.getElementById('print-resume-btn');
+
+      function openResumeModal() {
+        if (resumeModal) {
+          resumeModal.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+
+      function closeResumeModal() {
+        if (resumeModal) {
+          resumeModal.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      }
+
+      if (navResumeBtn) navResumeBtn.addEventListener('click', openResumeModal);
+      if (heroResumeBtn) heroResumeBtn.addEventListener('click', openResumeModal);
+      if (closeModalBtn) closeModalBtn.addEventListener('click', closeResumeModal);
+      if (closeModalBottomBtn) closeModalBottomBtn.addEventListener('click', closeResumeModal);
+
+      if (resumeModal) {
+        resumeModal.addEventListener('click', function (e) {
+          if (e.target === resumeModal) closeResumeModal();
+        });
+      }
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && resumeModal && resumeModal.classList.contains('open')) {
+          closeResumeModal();
+        }
+      });
+
+      if (printResumeBtn) {
+        printResumeBtn.addEventListener('click', function () {
+          window.print();
+        });
+      }
+
+    })();
+  </script>
+</body>
+</html>

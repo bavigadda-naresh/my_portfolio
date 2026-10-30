@@ -1,0 +1,8 @@
+{
+  "name": "Bavigadda Naresh - 3D Interactive Portfolio",
+  "description": "Professional 3D interactive portfolio website for Bavigadda Naresh, Python Full Stack Developer, featuring WebGL particle constellation, spatial geometry, and interactive projects.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
